@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  username String
+  password String
+  avatar   String
+  blurb    String
+  lastSeen DateTime @default(now())
+
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  friendsAdded    UserFriend[] @relation("FriendsAdded")
+  friendsReceived UserFriend[] @relation("FriendsReceived")
+
+  friendRequestsSent     UserFriendRequest[] @relation("FriendRequestSent")
+  friendRequestsReceived UserFriendRequest[] @relation("FriendRequestReceived")
+}
+
+model Message {
+  id Int @id @default(autoincrement())
+
+  senderId   Int
+  receiverId Int
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model UserFriendRequest {
+  id Int @id @default(autoincrement())
+
+  senderId   Int
+  receiverId Int
+
+  sender   User @relation("FriendRequestSent", fields: [senderId], references: [id])
+  receiver User @relation("FriendRequestReceived", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+model UserFriend {
+  id Int @id @default(autoincrement())
+
+  userId   Int
+  friendId Int
+
+  user   User @relation("FriendsAdded", fields: [userId], references: [id])
+  friend User @relation("FriendsReceived", fields: [friendId], references: [id])
+
+  @@unique([userId, friendId])
+}
