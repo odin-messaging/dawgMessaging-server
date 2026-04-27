@@ -7,13 +7,24 @@ datasource db {
   provider = "postgresql"
 }
 
+model Avatar {
+  id Int @id @default(autoincrement())
+
+  style String
+  seed  String
+
+  user User?
+}
+
 model User {
   id       Int      @id @default(autoincrement())
-  username String
+  username String   @unique
   password String
-  avatar   String
-  blurb    String
+  blurb    String?
   lastSeen DateTime @default(now())
+
+  avatarId Int    @unique
+  avatar   Avatar @relation(fields: [avatarId], references: [id])
 
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
@@ -30,6 +41,8 @@ model Message {
 
   senderId   Int
   receiverId Int
+  message    String
+  dateSent   DateTime @default(now())
 
   sender   User @relation("SentMessages", fields: [senderId], references: [id])
   receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])

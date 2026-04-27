@@ -1,58 +1,86 @@
-// import request from 'supertest';
-// import { createApp } from '../app.js';
+import { jest } from '@jest/globals'
+import request from 'supertest'
+import bcrypt from 'bcryptjs'
+import { createApp } from '../app.js'
 
-// describe('Authentication Endpoints', () => {
-//   let app;
+jest.mock('../lib/prisma.js')
 
-//   beforeAll(() => {
-//     app = createApp();
-//   });
+import { prisma } from '../lib/prisma.js'
 
-//   describe('POST /auth/register', () => {
-//     it('should register a new user with valid credentials', async () => {
-//       // TODO: Implement when auth routes are created
-//       // const response = await request(app)
-//       //   .post('/auth/register')
-//       //   .send({
-//       //     username: 'testuser',
-//       //     password: 'password123',
-//       //   });
-//       //
-//       // expect(response.status).toBe(201);
-//       // expect(response.body).toHaveProperty('id');
-//       // expect(response.body).toHaveProperty('token');
-//       // expect(response.body.username).toBe('testuser');
-//     });
+describe('Authentication Endpoints', () => {
+  const app = request(createApp())
+  let hashedPassword
 
-//     it('should reject duplicate usernames', async () => {
-//       // TODO: Implement when auth routes are created
-//     });
+  beforeAll(async () => {
+    hashedPassword = await bcrypt.hash('password123', 10)
+  })
 
-//     it('should validate required fields', async () => {
-//       // TODO: Implement when auth routes are created
-//     });
-//   });
+  beforeEach(() => {
+    prisma.user.findUnique = jest.fn()
+    prisma.user.create = jest.fn()
+  })
 
-//   describe('POST /auth/login', () => {
-//     it('should login user with valid credentials', async () => {
-//       // TODO: Implement when auth routes are created
-//       // const response = await request(app)
-//       //   .post('/auth/login')
-//       //   .send({
-//       //     username: 'testuser',
-//       //     password: 'password123',
-//       //   });
-//       //
-//       // expect(response.status).toBe(200);
-//       // expect(response.body).toHaveProperty('token');
-//     });
+  describe('POST /auth/signup', () => {
+    it('should register a new user with valid credentials', async () => {
+      prisma.user.findUnique.mockResolvedValue(null)
+      prisma.user.create.mockResolvedValue({ id: 1, username: 'testuser', password: hashedPassword })
 
-//     it('should reject invalid password', async () => {
-//       // TODO: Implement when auth routes are created
-//     });
+      const res = await app.post('/auth/signup')
+        .send({ username: 'testuser', password: 'password123' })
 
-//     it('should reject non-existent user', async () => {
-//       // TODO: Implement when auth routes are created
-//     });
-//   });
-// });
+      expect(res.status).toBe(201)
+      expect(res.body).toHaveProperty('token')
+      expect(res.body.username).toBe('testuser')
+    })
+
+    it('should reject duplicate usernames', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 1, username: 'testuser' })
+
+      const res = await app.post('/auth/signup')
+        .send({ username: 'testuser', password: 'password123' })
+
+      expect(res.status).toBe(409)
+      expect(res.body).toHaveProperty('error', 'Username taken')
+    })
+
+    it('should validate required fields', async () => {
+      const res = await app.post('/auth/signup')
+        .send({ username: '', password: '' })
+
+      expect(res.status).toBe(400)
+      expect(res.body).toHaveProperty('error', 'Missing fields')
+    })
+  })
+
+  describe('POST /auth/login', () => {
+    it('should login user with valid credentials', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 1, username: 'testuser', password: hashedPassword })
+
+      const res = await app.post('/auth/login')
+        .send({ username: 'testuser', password: 'password123' })
+
+      expect(res.status).toBe(200)
+      expect(res.body).toHaveProperty('token')
+    })
+
+    it('should reject invalid password', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 1, username: 'testuser', password: hashedPassword })
+
+      const res = await app.post('/auth/login')
+        .send({ username: 'testuser', password: 'wrongpass' })
+
+      expect(res.status).toBe(401)
+      expect(res.body).toHaveProperty('error', 'Invalid credentials')
+    })
+
+    it('should reject non-existent user', async () => {
+      prisma.user.findUnique.mockResolvedValue(null)
+
+      const res = await app.post('/auth/login')
+        .send({ username: 'ghost', password: 'password123' })
+
+      expect(res.status).toBe(401)
+      expect(res.body).toHaveProperty('error', 'Invalid credentials')
+    })
+  })
+})

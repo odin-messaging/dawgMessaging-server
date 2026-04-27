@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { createApp } from '../app';
+import { createApp } from '../app.js';
 
 const api = request(createApp())
 
@@ -8,4 +8,4 @@ it('check if wired', async () => {
     .get('/')
     .expect(200)
     .expect({ msg: 'test' });
-});
+})
