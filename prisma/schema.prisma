@@ -27,25 +27,25 @@ model User {
   avatar   Avatar @relation(fields: [avatarId], references: [id])
 
   sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
 
   friendsAdded    UserFriend[] @relation("FriendsAdded")
   friendsReceived UserFriend[] @relation("FriendsReceived")
 
   friendRequestsSent     UserFriendRequest[] @relation("FriendRequestSent")
   friendRequestsReceived UserFriendRequest[] @relation("FriendRequestReceived")
+  groupChats GroupChat[]
 }
 
 model Message {
   id Int @id @default(autoincrement())
 
-  senderId   Int
-  receiverId Int
-  message    String
-  dateSent   DateTime @default(now())
+  senderId Int
+  chatId   Int
+  message  String
+  dateSent DateTime @default(now())
 
-  sender   User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender User @relation("SentMessages", fields: [senderId], references: [id])
+  chat   GroupChat @relation(fields: [chatId], references: [id])
 }
 
 model UserFriendRequest {
@@ -70,4 +70,13 @@ model UserFriend {
   friend User @relation("FriendsReceived", fields: [friendId], references: [id])
 
   @@unique([userId, friendId])
+}
+
+model GroupChat {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  title     String
+
+  users    User[]
+  messages Message[]
 }
