@@ -29,8 +29,7 @@ describe('Authentication Endpoints', () => {
         .send({ username: 'testuser', password: 'password123' })
 
       expect(res.status).toBe(201)
-      expect(res.body).toHaveProperty('token')
-      expect(res.body.username).toBe('testuser')
+      expect(typeof res.body).toBe('string')
     })
 
     it('should reject duplicate usernames', async () => {
@@ -60,7 +59,7 @@ describe('Authentication Endpoints', () => {
         .send({ username: 'testuser', password: 'password123' })
 
       expect(res.status).toBe(200)
-      expect(res.body).toHaveProperty('token')
+      expect(typeof res.body).toBe('string')
     })
 
     it('should reject invalid password', async () => {

@@ -36,7 +36,7 @@ const signup = async (req, res) => {
 
     const token = jwt.sign({ sub: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: '7d' })
 
-    res.status(201).json({ token, username: user.username })
+    res.status(201).json(token)
   } catch (error) {
     console.error('SIGNUP ERROR:', error)
     res.status(500).json({ error: 'Internal server error' })
@@ -62,7 +62,7 @@ const login = async (req, res) => {
 
     const token = jwt.sign({ sub: user.id }, process.env.JWT_SECRET_KEY, { expiresIn: '7d' })
 
-    res.json({ token, username: user.username })
+    res.status(200).json(token)
   } catch (error) {
     console.error('LOGIN ERROR:', error)
     res.status(500).json({ error: 'Internal server error' })
